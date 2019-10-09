@@ -1,10 +1,10 @@
 const socket = io('http://localhost:3000')
-const messageContainer = document.getElementById('message-container')
-const messageForm = document.getElementById('send-container')
-const messageInput = document.getElementById('message-input')
+const conteneurMessage = document.getElementById('message-container')
+const formulaireMessage = document.getElementById('send-container')
+const entreeMessage = document.getElementById('message-input')
 
-const name = prompt('What is your name?')
-appendMessage('You joined')
+const name = prompt('Quel est votre prenom ?')
+appendMessage('Vous avez rejoint')
 socket.emit('new-user', name)
 
 socket.on('chat-message', data => {
@@ -19,16 +19,16 @@ socket.on('user-disconnected', name => {
   appendMessage(`${name} disconnected`)
 })
 
-messageForm.addEventListener('submit', e => {
+formulaireMessage.addEventListener('submit', e => {
   e.preventDefault()
-  const message = messageInput.value
+  const message = entreeMessage.value
   appendMessage(`You: ${message}`)
   socket.emit('send-chat-message', message)
-  messageInput.value = ''
+  entreeMessage.value = ''
 })
 
 function appendMessage(message) {
   const messageElement = document.createElement('div')
   messageElement.innerText = message
-  messageContainer.append(messageElement)
+  conteneurMessage.append(messageElement)
 }
