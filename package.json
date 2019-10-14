@@ -9,7 +9,8 @@
   "author": "jerome",
   "license": "ISC",
   "dependencies": {
-    "socket.io": "^2.3.0"
+    "socket.io": "^2.3.0",
+    "express": ""
   },
   "devDependencies": {
     "nodemon": "^1.19.3"

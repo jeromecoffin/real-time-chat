@@ -1,0 +1,89 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+
+  <title>Real Time Chat</title>
+
+	<link rel="stylesheet" type="text/css" href="style.css">
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+
+</head>
+
+<body style="background-color: white;">
+
+
+	<div style="float:right;width:150px;border-left:1px solid black;height:auto;padding:10px;overflow:scroll-y;">
+		<b>SALONS</b>
+		<div id="rooms"></div>
+	</div>
+	<div style="float:left;width:500px;height:250px;overflow:scroll-y;padding:10px;">
+		<div id="conversation"></div>
+		<div style="position:fixed;bottom:0;">
+			<input id="data" style="width:300px;" />
+			<input type="button" id="datasend" value="send" />
+		</div>
+	</div>
+
+	<!-- lier le fichier client socket.io (voir rapport) -->
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+	<script>
+	//communiquer sur le port 8080
+	var socket = io.connect('http://localhost:8080');
+
+	// debut de la connexion au serveur, on demande le nom
+	socket.on('connect', function(){
+		// on appelle la fonction cote serveur 'nouvelUtilisateur' et envoie l'entree de l'uilisateur
+		socket.emit('nouvelUtilisateur', prompt("Quel est votre nom ?"));
+	});
+
+	// listener, whenever the server emits 'updatechat', this updates the chat body
+	socket.on('actualiserChat', function (username, data) {
+		$('#conversation').append('<b>'+username + ':</b> ' + data + '<br>');
+	});
+
+	// listener, whenever the server emits 'actualiserSalons', this updates the room the client is in
+	socket.on('actualiserSalons', function(rooms, current_room) {
+		$('#rooms').empty();
+		$.each(rooms, function(key, value) {
+			if(value == current_room){
+				$('#rooms').append('<div>' + value + '</div>');
+			}
+			else {
+				$('#rooms').append('<div><a href="#" onclick="changerSalon(\''+value+'\')">' + value + '</a></div>');
+			}
+		});
+	});
+
+	function changerSalon(room){
+		socket.emit('changerSalon', room);
+	}
+
+	// on load of page
+	$(function(){
+		// when the client clicks SEND
+		$('#datasend').click( function() {
+			var message = $('#data').val();
+			$('#data').val('');
+			// tell server to execute 'lancerChat' and send along one parameter
+			socket.emit('lancerChat', message);
+		});
+
+		// when the client hits ENTER on their keyboard
+		$('#data').keypress(function(e) {
+			if(e.which == 13) {
+				$(this).blur();
+				$('#datasend').focus().click();
+			}
+		});
+	});
+
+</script>
+
+
+
+</body>
+</html>
