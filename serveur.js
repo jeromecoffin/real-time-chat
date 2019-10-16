@@ -1,8 +1,8 @@
-var express = require('express')
-  , app = express()
-  , http = require('http')
-  , server = http.createServer(app)
-  , io = require('socket.io').listen(server);
+const express = require('express')
+const app = express()
+const http = require('http')
+const server = http.createServer(app)
+const io = require('socket.io').listen(server);
 
 server.listen(8080);
 
@@ -11,34 +11,33 @@ app.get('/', function (req, res) {
   res.sendfile(__dirname + '/client.html');
 });
 
-// utilisateurs which are currently connected to the chat
+// utilisateurs connectés au chat
 var utilisateurs = {};
 
-// salons which are currently available in chat
+// salons disponibles pour le chat
 var salons = ['salon_general','salon2','salon3'];
 
 io.sockets.on('connection', function (socket) {
 
-	// when the client emits 'nouvelUtilisateur', this listens and executes
+	// quand le client envoie 'nouvelUtilisateur', on ecoute et execute
 	socket.on('nouvelUtilisateur', function(username){
-		// store the username in the socket session for this client
+
 		socket.username = username;
-		// store the room name in the socket session for this client
+
 		socket.room = 'salon_general';
-		// add the client's username to the global list
+
 		utilisateurs[username] = username;
-		// send client to room 1
+    //on envoie par defaut le client au salon general
 		socket.join('salon_general');
-		// echo to client they've connected
+    //on avertit le nouvel utilisateur qu il est bien connecte
 		socket.emit('actualiserChat', 'SERVER', 'vous etes connecte au salon general');
-		// echo to room 1 that a person has connected to their room
-		socket.broadcast.to('salon1').emit('actualiserChat', 'SERVER', username + ' a rejoins le salon');
-		socket.emit('actualiserSalons', salons, 'salon1');
+    //on avertit tous les utilisateurs connectes au salon general l'arrive d'un nouvel utilisateur
+		socket.broadcast.to('salon_general').emit('actualiserChat', 'SERVER', username + ' a rejoint le salon');
+		socket.emit('actualiserSalons', salons, 'salon_general');
 	});
 
-	// when the client emits 'lancerChat', this listens and executes
+	// quand le client emet 'lancerChat', on execute
 	socket.on('lancerChat', function (data) {
-		// we tell the client to execute 'actualiserChat' with 2 parameters
 		io.sockets.in(socket.room).emit('actualiserChat', socket.username, data);
 	});
 
@@ -46,22 +45,22 @@ io.sockets.on('connection', function (socket) {
 		socket.leave(socket.room);
 		socket.join(newroom);
 		socket.emit('actualiserChat', 'SERVER', 'vous etes connecte a '+ newroom);
-		// sent message to OLD room
+		// envoye message au salon quitte
 		socket.broadcast.to(socket.room).emit('actualiserChat', 'SERVER', socket.username+' a quitte le salon');
-		// update socket session room title
+		// on met a jour le salon associe au socket
 		socket.room = newroom;
-		socket.broadcast.to(newroom).emit('actualiserChat', 'SERVER', socket.username+' a rejoins le salon');
+		socket.broadcast.to(newroom).emit('actualiserChat', 'SERVER', socket.username+' a rejoint le salon');
 		socket.emit('actualiserSalons', salons, newroom);
 	});
 
 
-	// when the user disconnects.. perform this
+	// on moment de la deconnexion
 	socket.on('disconnect', function(){
-		// remove the username from global utilisateurs list
+		// on enleve le nom de l'utilisateur de la liste
 		delete utilisateurs[socket.username];
-		// update list of users in chat, client-side
+		// on met a jour cote client
 		io.sockets.emit('updateusers', utilisateurs);
-		// echo globally that this client has left
+		// tous les salons savent que l'utilisateur a quitté tous les salons
 		socket.broadcast.emit('actualiserChat', 'SERVER', socket.username + ' est deconnecte');
 		socket.leave(socket.room);
 	});
